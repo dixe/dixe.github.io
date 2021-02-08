@@ -5728,7 +5728,7 @@ var $author$project$TypeToJson$Generator$Decode$typeDef = function (td) {
 				'decoder',
 				$author$project$TypeToJson$Generator$Decode$typeAnnotation(ta),
 				'(Decode.list {{decoder}})');
-		default:
+		case 'DictDef':
 			var k = td.a;
 			var v = td.b;
 			return A2(
@@ -5743,6 +5743,21 @@ var $author$project$TypeToJson$Generator$Decode$typeDef = function (td) {
 						$author$project$TypeToJson$Generator$Decode$typeAnnotation(v))
 					]),
 				'Json.Decode.Extra.dict2 {{keyDecoder}} {{valDecoder}}');
+		default:
+			var err = td.a;
+			var ok = td.b;
+			return A2(
+				$author$project$TypeToJson$Utilities$interpolateAll,
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'okDecoder',
+						$author$project$TypeToJson$Generator$Decode$typeAnnotation(ok)),
+						_Utils_Tuple2(
+						'errDecoder',
+						$author$project$TypeToJson$Generator$Decode$typeAnnotation(err))
+					]),
+				'Decode.oneOf [ Decode.succeed Ok\n    |> required "Ok" {{okDecoder}}\n, Decode.succeed Err\n    |> required "Err" {{errDecoder}}\n]\n');
 	}
 };
 var $author$project$TypeToJson$Generator$Decode$arguments = F2(
@@ -6192,7 +6207,7 @@ var $author$project$TypeToJson$Generator$Encode$typeDef = F2(
 					'encoder',
 					A2($author$project$TypeToJson$Generator$Encode$typeAnnotation, depth, arg),
 					'Encode.list <| {{encoder}}');
-			default:
+			case 'DictDef':
 				var k = td.a;
 				var v = td.b;
 				return A2(
@@ -6207,6 +6222,21 @@ var $author$project$TypeToJson$Generator$Encode$typeDef = F2(
 							A2($author$project$TypeToJson$Generator$Encode$typeAnnotation, depth, v))
 						]),
 					'Encode.dict {{keyEncoder}} {{valEncoder}}');
+			default:
+				var err = td.a;
+				var ok = td.b;
+				return A2(
+					$author$project$TypeToJson$Utilities$interpolateAll,
+					_List_fromArray(
+						[
+							_Utils_Tuple2(
+							'okEncoder',
+							A2($author$project$TypeToJson$Generator$Encode$typeAnnotation, depth, ok)),
+							_Utils_Tuple2(
+							'errEncoder',
+							A2($author$project$TypeToJson$Generator$Encode$typeAnnotation, depth, err))
+						]),
+					'(\\data -> Encode.object\n  (case data of\n    Ok ok ->\n             [("Ok", {{okEncoder}} ok)]\n    Err err ->\n             [("Err", {{errEncoder}} err)]))\n');
 		}
 	});
 var $author$project$TypeToJson$Generator$Encode$arguments = F3(
@@ -6609,6 +6639,10 @@ var $author$project$TypeToJson$Parser$Other = function (a) {
 var $author$project$TypeToJson$Types$Record = function (a) {
 	return {$: 'Record', a: a};
 };
+var $author$project$TypeToJson$Types$ResultDef = F2(
+	function (a, b) {
+		return {$: 'ResultDef', a: a, b: b};
+	});
 var $author$project$TypeToJson$Types$Tuple = function (a) {
 	return {$: 'Tuple', a: a};
 };
@@ -6653,20 +6687,20 @@ var $author$project$TypeToJson$Parser$getFields = function (rec) {
 	var ls = $author$project$TypeToJson$Parser$flattenParseResults(
 		A2(
 			$elm$core$List$map,
-			function (_v6) {
-				var n = _v6.a;
-				var t = _v6.b;
-				var _v7 = $author$project$TypeToJson$Parser$typeAnnotation(
+			function (_v8) {
+				var n = _v8.a;
+				var t = _v8.b;
+				var _v9 = $author$project$TypeToJson$Parser$typeAnnotation(
 					$stil4m$elm_syntax$Elm$Syntax$Node$value(t));
-				if (_v7.$ === 'Ok') {
-					var anno = _v7.a;
+				if (_v9.$ === 'Ok') {
+					var anno = _v9.a;
 					return $elm$core$Result$Ok(
 						{
 							anno: anno,
 							name: $stil4m$elm_syntax$Elm$Syntax$Node$value(n)
 						});
 				} else {
-					var e = _v7.a;
+					var e = _v9.a;
 					return $elm$core$Result$Err(e);
 				}
 			},
@@ -6736,7 +6770,26 @@ var $author$project$TypeToJson$Parser$typeAnnotation = function (anno) {
 										$author$project$TypeToJson$Parser$Other,
 										_List_fromArray(
 											[
-												'Dict  with ' + ($elm$core$String$fromInt(
+												'Dict with ' + ($elm$core$String$fromInt(
+												$elm$core$List$length(args)) + ' arguments')
+											])));
+							}
+						case 'Result':
+							if ((args.b && args.b.b) && (!args.b.b.b)) {
+								var a = args.a;
+								var _v6 = args.b;
+								var b = _v6.a;
+								return $elm$core$Result$Ok(
+									$author$project$TypeToJson$Types$Typed(
+										A2($author$project$TypeToJson$Types$ResultDef, a, b)));
+							} else {
+								return $elm$core$Result$Err(
+									A2(
+										$elm$core$List$map,
+										$author$project$TypeToJson$Parser$Other,
+										_List_fromArray(
+											[
+												'Result with ' + ($elm$core$String$fromInt(
 												$elm$core$List$length(args)) + ' arguments')
 											])));
 							}
@@ -13528,7 +13581,7 @@ var $author$project$Main$parse = function (model) {
 			{output: e});
 	}
 };
-var $author$project$Main$test = '\r\ntype alias TAlias = Dict Int String\r\n\r\n';
+var $author$project$Main$test = '\r\ntype alias TAlias = Result Int String\r\n\r\n';
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
 		$author$project$Main$parse(
