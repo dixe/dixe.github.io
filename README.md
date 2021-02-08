@@ -1,2 +1,2 @@
 # dixe.github.io
- Website
+For now redicrect to https://dixe.github.io/TypeToJson
